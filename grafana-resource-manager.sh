@@ -58,10 +58,10 @@ dashboard)
         ${grafana_url?}/api/dashboards/db/${dashboard?} \
       | jq --indent 2 '.dashboard.id=null' \
       | jq --indent 2 '.overwrite=true' \
-      | jq --indent 2 'del(.meta.expires)' \
       | jq --indent 2 'del(.meta.created)' \
-      | jq --indent 2 'del(.meta.updated)' \
       | jq --indent 2 'del(.meta.createdBy)' \
+      | jq --indent 2 'del(.meta.expires)' \
+      | jq --indent 2 'del(.meta.updated)' \
       | jq --indent 2 'del(.meta.updatedBy)' \
         > ${config_dir?}/dashboards/${dashboard?}.json \
       || exit 1
