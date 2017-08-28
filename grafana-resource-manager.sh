@@ -1,8 +1,8 @@
 #!/bin/bash -e
 
-
 resource=${1?}
 subcmd=${2?}
+curl_extra_opts=""
 
 if [[ -z ${auth_user} ]]; then
   echo -e "Please provide admin username:"
@@ -14,6 +14,24 @@ if [[ -z ${auth_pwd} ]]; then
   read -s -p '=> ' auth_pwd
 fi
 
+if [[ ${debug} == "true" ]]; then
+  set -x
+  curl_extra_opts+="--verbose "
+fi
+
+if [[ ${insecure} == "true" ]]; then
+  curl_extra_opts+="--insecure "
+fi
+
+_curl() {
+  curl \
+    -fsS \
+    -u "${auth_user?}:${auth_pwd?}" \
+    --header "Content-Type: application/json" \
+    ${curl_extra_opts?} \
+    $@
+}
+
 case ${resource?} in
 datasource)
   IFS=" "
@@ -24,16 +42,13 @@ datasource)
   import)
     for datasource in ${datasources[@]}; do
       echo "Executing ${subcmd?} on datasource ${datasource?}.."
-
-      curl \
+      _curl \
         -X POST \
-        -fsS \
-        -u "${auth_user?}:${auth_pwd?}" \
-        --header 'Content-Type: application/json' \
         -d @${config_dir?}/datasources/${datasource?}.json \
         ${grafana_url?}/api/datasources \
       || exit 1
     done
+    echo
   ;;
   *)
     echo "Dunno subcmd ${subcmd?}.."
@@ -51,10 +66,7 @@ dashboard)
     for dashboard in ${dashboards[@]}; do
       echo "Executing ${subcmd?} on dashboard ${dashboard?}.."
 
-      curl \
-        -fsS \
-        -u "${auth_user?}:${auth_pwd?}" \
-        --header 'Content-Type: application/json' \
+      _curl \
         ${grafana_url?}/api/dashboards/db/${dashboard?} \
       | jq --indent 2 '.dashboard.id=null' \
       | jq --indent 2 '.overwrite=true' \
@@ -71,25 +83,20 @@ dashboard)
     for dashboard in ${dashboards[@]}; do
       echo "Executing ${subcmd?} on dashboard ${dashboard?}.."
 
-      curl \
+      _curl \
         -X POST \
-        -fsS \
-        -u "${auth_user?}:${auth_pwd?}" \
-        --header 'Content-Type: application/json' \
         -d @${config_dir?}/dashboards/${dashboard?}.json \
         ${grafana_url?}/api/dashboards/db \
       || exit 1
+      echo
     done
   ;;
   delete)
     for dashboard in ${dashboards[@]}; do
       echo "Executing ${subcmd?} on dashboard ${dashboard?}.."
 
-      curl \
+      _curl \
         -X DELETE \
-        -fsS \
-        -u "${auth_user?}:${auth_pwd?}" \
-        --header 'Content-Type: application/json' \
         ${grafana_url?}/api/dashboards/db/${dashboard?} \
       || exit 1
     done
