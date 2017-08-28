@@ -9,4 +9,3 @@ RUN \
 COPY grafana-resource-manager.sh /usr/bin/grafana-resource-manager
 RUN \
   chmod +x /usr/bin/grafana-resource-manager
-ENTRYPOINT ["/usr/bin/grafana-resource-manager"]
